@@ -1,0 +1,12 @@
+package cs214.language
+
+object Freedom extends App {
+	
+    println("type this out")
+    println("...now do this...")
+    println("let's get this on track")
+    println("Chinese people are angry about Malaysia")
+    println("Compelling you say? Fuck you.")
+    println("..and finish now.")
+    
+}
