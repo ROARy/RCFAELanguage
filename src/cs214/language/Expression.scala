@@ -7,19 +7,6 @@ abstract class Expression {
     }
 }
 
-
-/**
- * BNF:
- * 
- * <RCFAE> ::=	  <NumericExpression>
- * 				| <id>
- * 				| {binop <ArithmeticExpression> <ArithmeticExpression>
- *   			| {if0 <ArithmeticExpression> <ArithmeticExpression> <ArithmeticExpression>}
- *    			| {rec <ArithmeticExpression>}
- *    			| {fun <id> <ArithmeticExpression>}
- *       		| {app <ArithmeticExpression>}
- */
-
 /*
 <RCFAE> ::=   <num>
 x			| {+ <RCFAE> <RCFAE>} 			2 arg
@@ -30,26 +17,7 @@ x			| {fun {<id>} <RCFAE>}			2 arg
 x			| {if0 <RCFAE> <RCFAE> <RCFAE>}	3 arg
 x			| {rec {<id>} {<RCFAE>} <RCFAE>}2 arg
 x			| {with {{<id>} <RCFAE>} {<RCFAE>}} 3 arg
-
-//<RCFAE> ::=   < Num >
-//			| <RCFAE> + <RCFAE>
-//			| <RCFAE> * <RCFAE>
-//			| < Id >
-//			| def (< Id >) { <RCFAE> }
-//			| {<RCFAE> <RCFAE>}
-//			| if0 (<RCFAE>) { <RCFAE> } else { <RCFAE> }
-//			| {rec {<id> <RCFAE>} <RCFAE>}
-
  */
-
-
-// if0
-// <symb>
-// <num>
-
-// 3 + 4
-// add(3, 5)
-// add(x, y)
 
 /*
 #lang plai
