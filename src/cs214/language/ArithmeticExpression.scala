@@ -1,12 +1,10 @@
 package cs214.language
 
-class ArithmeticExpression(lhs: Expression, rhs: Expression) extends Expression {
-  
-  
-  override def toString() : String = {
-      "(ArithmeticExpression " + lhs + " " + rhs + ")"
-  }
-    
+abstract class ArithmeticExpression(val lhs: Expression, val rhs: Expression) extends Expression {
+
+	override def toString() : String = {
+		"(ArithmeticExpression " + lhs + " " + rhs + ")"
+	}
 }
 //case class AdditionExpression(leftArg: Int, rightArg: Int) extends ArithmeticExpression {
 //  
