@@ -20,7 +20,6 @@ class TokenizerTest extends FunSuite with BeforeAndAfter {
         
     }
     
-    
     test("tokenize method properly splits a program into the correct number of tokens.") {
         assert(1 === program1.tokenizeScript.length)
         assert(1 === program2.tokenizeScript.length)
