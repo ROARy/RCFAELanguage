@@ -1,6 +1,7 @@
 package cs214.language
 
 import java.util.regex._
+import cs214.language.exceptions.ParseException
 
 object Console extends App {
     var program: Program = _

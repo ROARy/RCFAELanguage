@@ -1,9 +1,11 @@
 package cs214.language
 
+import cs214.language.exceptions.EmptyStoreException
+
 abstract class Store
 case class SimpleStore(location: Int, value: Value, store: Store) extends Store
+//case class RecursiveStore(location: Int, value: Value, store: Store) extends Store
 case class EmptyStore extends Store
-case class RecursiveStore extends Store
 object SimpleStore {
     def lookup(loc : Int, store: Store) : Value =  {
         store match {

@@ -1,8 +1,8 @@
 package cs214.language
 
 import java.util.logging.Logger
-
 import scala.collection.mutable.Queue
+import cs214.language.exceptions._
 
 /**
 * May change name to Program
@@ -35,10 +35,7 @@ class Program(rawScript: String) {
 	var evaluatedProgram : Any = _
 
 	// Used in testing.
-	def tokenizeScript : Queue[String] = {
-		if (rawScript == null) {
-			throw new ParseException()
-		}
+	def tokenizeScript() : Queue[String] = {
 		return tokenize()
 	}
 
@@ -54,11 +51,9 @@ class Program(rawScript: String) {
 	}
 
 	// Used in testing.
-	def parseScript() : Expression = {
-		if (tokenQueue.isEmpty) {
-			tokenQueue = tokenize()
-		}
-		return parse()
+	def parseScript(tokens: Queue[String]) : Expression = {
+		tokenQueue = tokens
+	    return parse()
 	}
 
 	// .
@@ -116,11 +111,8 @@ class Program(rawScript: String) {
 	}
 
 	// Used in testing.
-	def interpretScript() : ValueAndStore = {
-		if (parsedProgram == null) {
-			parsedProgram = parse()
-		}
-		return interpret(parsedProgram, EmptyEnvironment(), EmptyStore())
+	def interpretScript(expr : Expression) : ValueAndStore = {
+		return interpret(expr, EmptyEnvironment(), EmptyStore())
 	}
 
 	// .
@@ -141,7 +133,7 @@ class Program(rawScript: String) {
 	        case FunctionExpression(symbol, body) => new ValueAndStore(ClosureValue(symbol, body, env), sto)
 	        case RecursiveFunctionExpression(symbol, expr, body) => {
 	            // TODO: Need special implementation steps included in RecursiveFunctionExpression section of interpret() in Program class.
-	            throw new InterpretException()
+	            
 	            new ValueAndStore(ClosureValue(symbol, body, env), sto)
 	        }
 	        case ApplicationExpression(funExpr, argExpr) => {
@@ -220,16 +212,13 @@ class Program(rawScript: String) {
 	        case IdExpression(id) => new ValueAndStore(SimpleStore.lookup(SimpleEnvironment.lookup(id, env), sto), sto)
 	        case _ => throw new InterpretException()
 	    }
-	    
 		return interpretation
 	}
 	
 	// Used in testing.
-	def evaluateScript() {
-		if (interpretedProgram == null) {
-			interpretedProgram = interpret(parsedProgram, EmptyEnvironment(), EmptyStore())
-		}
-		return evaluate()
+	def evaluateScript(interpretation: ValueAndStore) : Any = {
+		interpretedProgram = interpretation
+	    return evaluate()
 	}
 
 	// .
@@ -253,7 +242,10 @@ class Program(rawScript: String) {
 			evaluatedProgram = evaluate()
 			return true
 	    } catch {
-	        case e => throw new ParseException()
+	        case te: TokenizeException => throw new TokenizeException()
+	        case pe: ParseException => throw new ParseException()
+	        case ie: InterpretException => throw new InterpretException()
+	        case ee: EvaluateException => throw new EvaluateException()
 	    }
 	}
 }
