@@ -26,13 +26,14 @@ object Console extends App {
     str = "{if0 {- 1 1} {{fun {x} {/ x 10}} 100} {* 1 2}}"
     (new Program(str)).run()
     
-    str = "{with {x 2} {+ x 1}}"
-    (new Program(str)).run()
+//    str = "{with {x 2} {+ x 1}}"
+//    (new Program(str)).run()
         
     while (!str.isEmpty()) {
         print("~> ")
         str = readLine()
         program = new Program(str)
+        
         try {
             program.run()
         } catch {

@@ -5,11 +5,12 @@ import scala.collection.mutable.Queue
 import cs214.language.exceptions._
 
 /**
-* May change name to Program
+* Takes a raw string input and can output the various stages of interpreting a 
+* program. 
 */
-class Program(rawScript: String) {
+class Program(var rawScript: String) {
 	private val LOGGER : Logger = Logger.getLogger(this.getClass().getSimpleName()) 
-	private val DEBUG : Boolean = true
+	private val DEBUG : Boolean = false
 	//  private val AND = "&&"
 	//  private val OR = "||"  
 	//  private val NOT = "~"
@@ -28,36 +29,36 @@ class Program(rawScript: String) {
 	private val ID_PATTERN = """(?<=\{)(\w+)""".r
 	private val BOX_PATTERN = """^\{*box$""".r
 
-	// Fields:
+	// Fields used in testing.
 	var tokenQueue : Queue[String] = new Queue[String]
 	var parsedProgram : Expression = _
 	var interpretedProgram : ValueAndStore = _
 	var evaluatedProgram : Any = _
 
-	// Used in testing.
-	def tokenizeScript() : Queue[String] = {
-		return tokenize()
+	// Breaks program string into tokens based on regular expressions. Used in testing only.
+	def tokenizeScript(rawString: String) : Queue[String] = {
+		return tokenize(rawString)
 	}
 
-	// .
-	private def tokenize() : Queue[String] = {
+	// Breaks program string into tokens based on regular expressions.
+	private def tokenize(rawString: String) : Queue[String] = {
 		// Surround all expressions with braces and remove spaces.
 		val preProcessorPattern : String = """(?<=\s|^)(\w+)(?=\s|\}|$)"""
-		var orig : String = preProcessorPattern.r.replaceAllIn(rawScript, "{$1}").replaceAllLiterally(" ","")
+		var orig : String = preProcessorPattern.r.replaceAllIn(rawString, "{$1}").replaceAllLiterally(" ","")
 
 		// Split processed program into tokens.
 		val splitPattern : String = """(?<!^)(?=\{)"""
 		return new Queue[String] ++= orig.split(splitPattern)
 	}
 
-	// Used in testing.
-	def parseScript(tokens: Queue[String]) : Expression = {
-		tokenQueue = tokens
+	// Accepts collection of tokens and matches keywords with their abstract representation. Used in testing only.
+	def parseScript(rawString: String) : Expression = {
+		tokenQueue = tokenize(rawString)
 	    return parse()
 	}
 
-	// .
-	private def parse() : Expression = {	    
+	// Accepts collection of tokens and matches keywords with their abstract representation.
+	private def parse() : Expression = {
 		// Grab the next token.
 		if (tokenQueue.isEmpty) {
 			throw new ParseException()
@@ -71,7 +72,7 @@ class Program(rawScript: String) {
 		val app2 = APP2_PATTERN.findFirstIn(nextToken)
 		val id = ID_PATTERN.findFirstIn(nextToken)
 
-		// Match.
+		// TODO: Find a way to match
 		if (num.isDefined) {
 			newExpression = NumericExpression(num.get.toInt)
 		} else if (IF0_PATTERN.findFirstIn(nextToken).isDefined) {
@@ -82,9 +83,6 @@ class Program(rawScript: String) {
 		} else if (REC_PATTERN.findFirstIn(nextToken).isDefined) {
 		    var idExp : IdExpression = parse() match {case IdExpression(x) => IdExpression(x)}
 			newExpression = RecursiveFunctionExpression(idExp.symbol, parse(), parse())
-		} else if (WITH_PATTERN.findFirstIn(nextToken).isDefined) {
-		    if (true) {} // TODO: need some extra stuff here.
-			newExpression = ApplicationExpression(parse(), parse())
 		} else if (ADD_PATTERN.findFirstIn(nextToken).isDefined) {
 			newExpression = new AdditionExpression(parse(), parse())
 		} else if (SUB_PATTERN.findFirstIn(nextToken).isDefined) {
@@ -110,12 +108,12 @@ class Program(rawScript: String) {
 		return newExpression
 	}
 
-	// Used in testing.
+	// Accepts an expression as an argument and computes the result. Used in testing only.
 	def interpretScript(expr : Expression) : ValueAndStore = {
 		return interpret(expr, EmptyEnvironment(), EmptyStore())
 	}
 
-	// .
+	// Accepts an expression as an argument and computes the result.
 	private def interpret(expr : Expression, env : Environment, sto : Store) : ValueAndStore = {
 	    // TODO: Implement the interpret method in Program class.
 	    var interpretation : ValueAndStore = expr match {
@@ -153,81 +151,43 @@ class Program(rawScript: String) {
 	                    new SimpleEnvironment(closure.symbol, nextLocation, closure.env), 
 	                    new SimpleStore(nextLocation, argVxs.value, argVxs.store))
 	        }
-	        case AdditionExpression(lhs, rhs) => { 
-	            val leftVxs = interpret(lhs, env, sto)
-	            val leftArg = leftVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            val rightVxs = interpret(rhs, env, leftVxs.store)
-	            val rightArg = rightVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            new ValueAndStore(NumericValue(leftArg + rightArg), rightVxs.store)
-	        }
-	        case SubtractionExpression(lhs, rhs) => { 
-	            val leftVxs = interpret(lhs, env, sto)
-	            val leftArg = leftVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            val rightVxs = interpret(rhs, env, leftVxs.store)
-	            val rightArg = rightVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            new ValueAndStore(NumericValue(leftArg - rightArg), rightVxs.store)
-	        }
-	        case MultiplicationExpression(lhs, rhs) => { 
-	            val leftVxs = interpret(lhs, env, sto)
-	            val leftArg = leftVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            val rightVxs = interpret(rhs, env, leftVxs.store)
-	            val rightArg = rightVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            new ValueAndStore(NumericValue(leftArg * rightArg), rightVxs.store)
-	        }
-	        case DivisionExpression(lhs, rhs) => { 
-	            val leftVxs = interpret(lhs, env, sto)
-	            val leftArg = leftVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            val rightVxs = interpret(rhs, env, leftVxs.store)
-	            val rightArg = rightVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            new ValueAndStore(NumericValue(leftArg / rightArg), rightVxs.store)
-	        }
-	        case ModuloExpression(lhs, rhs) => { 
-	            val leftVxs = interpret(lhs, env, sto)
-	            val leftArg = leftVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            val rightVxs = interpret(rhs, env, leftVxs.store)
-	            val rightArg = rightVxs.value match {
-	                case NumericValue(num) => num
-	            }
-	            new ValueAndStore(NumericValue(leftArg % rightArg), rightVxs.store)
-	        }
-	        // case BoxExpression(box) => new ValueStore(, sto)
+	        case AdditionExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x+y)
+	        case SubtractionExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x-y)
+	        case MultiplicationExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x*y)
+	        case DivisionExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x/y)
+	        case ModuloExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x%y)
 	        case IdExpression(id) => new ValueAndStore(SimpleStore.lookup(SimpleEnvironment.lookup(id, env), sto), sto)
 	        case _ => throw new InterpretException()
 	    }
 		return interpretation
 	}
 	
-	// Used in testing.
-	def evaluateScript(interpretation: ValueAndStore) : Any = {
+	// DRY way to handle different binary operations.
+	private def binaryOperation(lhs: Expression, rhs: Expression, env: Environment, sto: Store, callback: (Int,Int) => Int) : ValueAndStore = {
+	    val leftVxs = interpret(lhs, env, sto)
+	    val leftArg = leftVxs.value match {
+	    	case NumericValue(num) => num
+	    }
+	    val rightVxs = interpret(rhs, env, leftVxs.store)
+	    val rightArg = rightVxs.value match {
+	    	case NumericValue(num) => num
+	    }
+	    new ValueAndStore(NumericValue(callback(leftArg, rightArg)), rightVxs.store)
+	}
+	
+	// Pretty-prints the result of running the program. Used in testing only.
+	def evaluateScript(interpretation: ValueAndStore) {
 		interpretedProgram = interpretation
-	    return evaluate()
+	    evaluate(interpretedProgram)
 	}
 
-	// .
-	private def evaluate() : Any = {
-	    val result = interpretedProgram.value match {
+	// Pretty-prints the result of running the program.
+	private def evaluate(vxs: ValueAndStore) {
+	    val result = vxs.value match {
 	        case NumericValue(num) => num
 	        case ClosureValue(a,b,c) => ClosureValue(a,b,c)
 	    }
-	    return result
+	    println(result)
 	}
 
 	/**
@@ -236,10 +196,14 @@ class Program(rawScript: String) {
 	def run() : Boolean = {
 	    // TODO: Ensure the run() method runs properly in Program class.
 	    try {
-	    	tokenQueue = tokenize()
+	    	tokenQueue = tokenize(rawScript)
+	    	if (DEBUG) tokenQueue.foreach(print _)
 			parsedProgram = parse()
+			if (DEBUG) println(parsedProgram)
 			interpretedProgram = interpret(parsedProgram, EmptyEnvironment(), EmptyStore())
-			evaluatedProgram = evaluate()
+			if (DEBUG) println(interpretedProgram)
+			evaluatedProgram = evaluate(interpretedProgram)
+			if (DEBUG) println(evaluatedProgram)
 			return true
 	    } catch {
 	        case te: TokenizeException => throw new TokenizeException()

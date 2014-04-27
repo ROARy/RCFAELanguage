@@ -1,5 +1,16 @@
 package cs214.language
 
+/*
+<RCFAE> ::=   <num>
+			| {+ <RCFAE> <RCFAE>}
+			| {* <RCFAE> <RCFAE>}
+			| <id>
+			| {fun {<id>} <RCFAE>}
+			| {<RCFAE> <RCFAE>} 
+			| {if0 <RCFAE> <RCFAE> <RCFAE>}
+			| {rec {<id>} {<RCFAE>} <RCFAE>}
+*/
+
 abstract class Expression
 case class NumericExpression(num: Int) extends Expression
 case class ConditionalExpression(test: Expression, truth: Expression, falsity: Expression) extends Expression
@@ -19,17 +30,8 @@ case class IdExpression(symbol: String) extends Expression
 //}
 //case class OperatorExpression() extends Expression
 
-/*
-<RCFAE> ::=   <num>
-x			| {+ <RCFAE> <RCFAE>} 			2 arg
-x			| {* <RCFAE> <RCFAE>} 			2 arg
-			| <id> 							1 arg
-x			| {fun {<id>} <RCFAE>}			2 arg
-			| {<RCFAE> <RCFAE>}				1 arg 
-x			| {if0 <RCFAE> <RCFAE> <RCFAE>}	3 arg
-x			| {rec {<id>} {<RCFAE>} <RCFAE>}2 arg
-x			| {with {{<id>} <RCFAE>} {<RCFAE>}} 3 arg
 
+/*
 (define-type BCFAE-Value
 (define-type Env
 (define-type Store

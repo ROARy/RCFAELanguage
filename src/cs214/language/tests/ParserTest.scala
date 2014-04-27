@@ -14,22 +14,22 @@ class ParserTest extends FunSuite with BeforeAndAfter {
     val program7 = new Program("{double 3}")
     val program8 = new Program("{double {if0 {0} 1 {2}}}")
     val program9 = new Program("x")
-    val program10 = new Program("{rec {x 3} {+ 3 4}}")
+    val program10 = new Program("{rec {x} {3} {+ 3 4}}")
     
     before {
         
     }
     
     test("parse method properly parses program into abstract syntax") {
-        assert("(NumericExpression 3)" === program1.parseScript.toString)
-        assert("(NumericExpression 78)" === program2.parseScript.toString)
-        assert("(AdditionExpression (NumericExpression 3) (NumericExpression 2))" === program3.parseScript.toString)
-        assert("(AdditionExpression (MultiplicationExpression (NumericExpression 1) (NumericExpression 7)) (NumericExpression 4))" === program4.parseScript.toString)
-        assert("(FunctionExpression (IdExpression 'x) (AdditionExpression (NumericExpression 3) (IdExpression 'x)))" === program5.parseScript.toString)
-        assert("(ConditionalExpression (AdditionExpression (NumericExpression 3) (NumericExpression 4)) (FunctionExpression (IdExpression 'x) (MultiplicationExpression (IdExpression 'x) (NumericExpression 2))) (NumericExpression 8))" === program6.parseScript.toString)
-        assert("(ApplicationExpression (IdExpression 'double) (NumericExpression 3))" === program7.parseScript.toString)
-        assert("(ApplicationExpression (IdExpression 'double) (ConditionalExpression (NumericExpression 0) (NumericExpression 1) (NumericExpression 2)))" === program8.parseScript.toString)
-        assert("(IdExpression 'x)" === program9.parseScript.toString)
-        assert("(RecursiveFunctionExpression (IdExpression 'x) (NumericExpression 3) (AdditionExpression (NumericExpression 3) (NumericExpression 4)))" === program10.parseScript.toString)
+        assert("NumericExpression(3)" === program1.parseScript(program1.rawScript).toString)
+        assert("NumericExpression(78)" === program2.parseScript(program2.rawScript).toString)
+        assert("AdditionExpression(NumericExpression(3),NumericExpression(2))" === program3.parseScript(program3.rawScript).toString)
+        assert("AdditionExpression(MultiplicationExpression(NumericExpression(1),NumericExpression(7)),NumericExpression(4))" === program4.parseScript(program4.rawScript).toString)
+        assert("FunctionExpression(x,AdditionExpression(NumericExpression(3),IdExpression(x)))" === program5.parseScript(program5.rawScript).toString)
+        assert("ConditionalExpression(AdditionExpression(NumericExpression(3),NumericExpression(4)),FunctionExpression(x,MultiplicationExpression(IdExpression(x),NumericExpression(2))),NumericExpression(8))" === program6.parseScript(program6.rawScript).toString)
+        assert("ApplicationExpression(IdExpression(double),NumericExpression(3))" === program7.parseScript(program7.rawScript).toString)
+        assert("ApplicationExpression(IdExpression(double),ConditionalExpression(NumericExpression(0),NumericExpression(1),NumericExpression(2)))" === program8.parseScript(program8.rawScript).toString)
+        assert("IdExpression(x)" === program9.parseScript(program9.rawScript).toString)
+        assert("RecursiveFunctionExpression(x,NumericExpression(3),AdditionExpression(NumericExpression(3),NumericExpression(4)))" === program10.parseScript(program10.rawScript).toString)
     }
 }

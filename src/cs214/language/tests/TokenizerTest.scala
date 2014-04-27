@@ -21,16 +21,16 @@ class TokenizerTest extends FunSuite with BeforeAndAfter {
     }
     
     test("tokenize method properly splits a program into the correct number of tokens.") {
-        assert(1 === program1.tokenizeScript.length)
-        assert(1 === program2.tokenizeScript.length)
-        assert(3 === program3.tokenizeScript.length)
-        assert(5 === program4.tokenizeScript.length)
-        assert(5 === program5.tokenizeScript.length)
-        assert(12 === program6.tokenizeScript.length)
-        assert(2 === program7.tokenizeScript.length)
-        assert(11 === program8.tokenizeScript.length)
-        assert(1 === program9.tokenizeScript.length)
-        assert(6 === program10.tokenizeScript.length)
+        assert(1 === program1.tokenizeScript(program1.rawScript).length)
+        assert(1 === program2.tokenizeScript(program2.rawScript).length)
+        assert(3 === program3.tokenizeScript(program3.rawScript).length)
+        assert(5 === program4.tokenizeScript(program4.rawScript).length)
+        assert(5 === program5.tokenizeScript(program5.rawScript).length)
+        assert(12 === program6.tokenizeScript(program6.rawScript).length)
+        assert(2 === program7.tokenizeScript(program7.rawScript).length)
+        assert(11 === program8.tokenizeScript(program8.rawScript).length)
+        assert(1 === program9.tokenizeScript(program9.rawScript).length)
+        assert(6 === program10.tokenizeScript(program10.rawScript).length)
     }
     
     test("tokenize method properly handles error.") {
