@@ -9,25 +9,18 @@ import cs214.language.exceptions._
 * program. 
 */
 class Program(var rawScript: String) {
-	private val LOGGER : Logger = Logger.getLogger(this.getClass().getSimpleName()) 
-	private val DEBUG : Boolean = false
-	//  private val AND = "&&"
-	//  private val OR = "||"  
-	//  private val NOT = "~"
 	private val NUM_PATTERN = """(?<=\{)(\d+)(?=\})""".r
 	private val APP1_PATTERN = """^\{$""".r
 	private val APP2_PATTERN = """(?<=\{)\w+$""".r
 	private val IF0_PATTERN = """(?<=\{)if0$""".r
 	private val FUN_PATTERN = """^\{*fun$""".r
 	private val REC_PATTERN = """^\{*rec$""".r
-	private val WITH_PATTERN = """^\{*with$""".r
 	private val ADD_PATTERN = """^\{*\+$""".r
 	private val SUB_PATTERN = """^\{*\-$""".r
 	private val DIV_PATTERN = """^\{*\/$""".r
 	private val MULT_PATTERN = """^\{*\*$""".r
 	private val MOD_PATTERN = """^\{*\%$""".r
 	private val ID_PATTERN = """(?<=\{)(\w+)""".r
-	private val BOX_PATTERN = """^\{*box$""".r
 
 	// Fields used in testing.
 	var tokenQueue : Queue[String] = new Queue[String]
@@ -65,14 +58,12 @@ class Program(var rawScript: String) {
 		} 
 		val nextToken = tokenQueue.dequeue
 		var newExpression : Expression = null
-
+		
 		// Try to match patterns to the token.
-		// TODO: There has to be a better way to do this but I can't find one.
 		val num = NUM_PATTERN.findFirstIn(nextToken)
 		val app2 = APP2_PATTERN.findFirstIn(nextToken)
 		val id = ID_PATTERN.findFirstIn(nextToken)
 
-		// TODO: Find a way to match
 		if (num.isDefined) {
 			newExpression = NumericExpression(num.get.toInt)
 		} else if (IF0_PATTERN.findFirstIn(nextToken).isDefined) {
@@ -93,9 +84,6 @@ class Program(var rawScript: String) {
 			newExpression = new DivisionExpression(parse(), parse())
 		} else if (MOD_PATTERN.findFirstIn(nextToken).isDefined) {
 			newExpression = new ModuloExpression(parse(), parse())
-		} else if (BOX_PATTERN.findFirstIn(nextToken).isDefined) {
-		    var idExp : IdExpression = parse() match {case IdExpression(x) => IdExpression(x)}
-			newExpression = new BoxExpression(idExp.symbol, parse())
 		} else if (APP1_PATTERN.findFirstIn(nextToken).isDefined) {
 			newExpression = new ApplicationExpression(parse(), parse())
 		} else if (app2.isDefined) {
@@ -108,14 +96,13 @@ class Program(var rawScript: String) {
 		return newExpression
 	}
 
-	// Accepts an expression as an argument and computes the result. Used in testing only.
-	def interpretScript(expr : Expression) : ValueAndStore = {
-		return interpret(expr, EmptyEnvironment(), EmptyStore())
+	// Accepts a string as an argument and computes the result. Used in testing only.
+	def interpretScript(script : String) : ValueAndStore = {
+		return interpret(parseScript(script), EmptyEnvironment(), EmptyStore())
 	}
 
 	// Accepts an expression as an argument and computes the result.
 	private def interpret(expr : Expression, env : Environment, sto : Store) : ValueAndStore = {
-	    // TODO: Implement the interpret method in Program class.
 	    var interpretation : ValueAndStore = expr match {
 	        case NumericExpression(num) => new ValueAndStore(NumericValue(num), sto)
 	        case ConditionalExpression(test, truth, falsity) => {
@@ -130,9 +117,23 @@ class Program(var rawScript: String) {
 	        }
 	        case FunctionExpression(symbol, body) => new ValueAndStore(ClosureValue(symbol, body, env), sto)
 	        case RecursiveFunctionExpression(symbol, expr, body) => {
-	            // TODO: Need special implementation steps included in RecursiveFunctionExpression section of interpret() in Program class.
+	        	val currentLocation = sto match {
+	                case SimpleStore(loc, _, _) => loc
+	                case EmptyStore() => -1
+	                case _ => throw new InterpretException()
+	            }
+	            val nextLocation = currentLocation + 1
+	            val newEnv = SimpleEnvironment(symbol, nextLocation, env)
+	            val exprVal = interpret(expr, newEnv, SimpleStore(nextLocation, null, sto))
 	            
-	            new ValueAndStore(ClosureValue(symbol, body, env), sto)
+	            // Mutate the current value in the store to reflect the result of the most recursive call.
+	            val recStore = exprVal.store match {
+	                case SimpleStore(_, _, _) => SimpleStore.lookup(nextLocation, exprVal.store)
+	                case _ => throw new InterpretException()
+	            }
+	            recStore.value = exprVal.value
+	            
+	            interpret(body, newEnv, recStore)
 	        }
 	        case ApplicationExpression(funExpr, argExpr) => {
 	            val funVxs = interpret(funExpr, env, sto) 
@@ -146,23 +147,24 @@ class Program(var rawScript: String) {
 	                case EmptyStore() => -1
 	                case _ => throw new InterpretException()
 	            }
+	            
 	            val nextLocation = currentLocation + 1
 	            interpret(closure.body, 
-	                    new SimpleEnvironment(closure.symbol, nextLocation, closure.env), 
-	                    new SimpleStore(nextLocation, argVxs.value, argVxs.store))
+	                    SimpleEnvironment(closure.symbol, nextLocation, closure.env), 
+	                    SimpleStore(nextLocation, argVxs.value, argVxs.store))
 	        }
 	        case AdditionExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x+y)
 	        case SubtractionExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x-y)
 	        case MultiplicationExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x*y)
 	        case DivisionExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x/y)
 	        case ModuloExpression(lhs, rhs) => binaryOperation(lhs,rhs,env,sto,(x,y)=>x%y)
-	        case IdExpression(id) => new ValueAndStore(SimpleStore.lookup(SimpleEnvironment.lookup(id, env), sto), sto)
+	        case IdExpression(id) => new ValueAndStore(SimpleStore.lookup(Environment.lookup(id, env), sto).value, sto)
 	        case _ => throw new InterpretException()
 	    }
 		return interpretation
 	}
 	
-	// DRY way to handle different binary operations.
+	// DRY way to compute the result of different binary operations.
 	private def binaryOperation(lhs: Expression, rhs: Expression, env: Environment, sto: Store, callback: (Int,Int) => Int) : ValueAndStore = {
 	    val leftVxs = interpret(lhs, env, sto)
 	    val leftArg = leftVxs.value match {
@@ -176,9 +178,8 @@ class Program(var rawScript: String) {
 	}
 	
 	// Pretty-prints the result of running the program. Used in testing only.
-	def evaluateScript(interpretation: ValueAndStore) {
-		interpretedProgram = interpretation
-	    evaluate(interpretedProgram)
+	def evaluateScript(script: String) {
+	    evaluate(interpretScript(script))
 	}
 
 	// Pretty-prints the result of running the program.
@@ -194,16 +195,12 @@ class Program(var rawScript: String) {
 	* Tokenizes, parses, interprets and evaluates program, returning true upon success.
 	*/
 	def run() : Boolean = {
-	    // TODO: Ensure the run() method runs properly in Program class.
 	    try {
 	    	tokenQueue = tokenize(rawScript)
-	    	if (DEBUG) tokenQueue.foreach(print _)
 			parsedProgram = parse()
-			if (DEBUG) println(parsedProgram)
 			interpretedProgram = interpret(parsedProgram, EmptyEnvironment(), EmptyStore())
-			if (DEBUG) println(interpretedProgram)
+			println(interpretedProgram)
 			evaluatedProgram = evaluate(interpretedProgram)
-			if (DEBUG) println(evaluatedProgram)
 			return true
 	    } catch {
 	        case te: TokenizeException => throw new TokenizeException()

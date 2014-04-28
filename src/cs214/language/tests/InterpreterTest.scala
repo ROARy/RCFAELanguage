@@ -5,35 +5,55 @@ import org.scalatest._
 
 class InterpreterTest extends FunSuite with BeforeAndAfter {
 
-    val program1 = new Program("{3}")
-    val program2 = new Program("78")
-    val program3 = new Program("{+ 3 2}")
-    val program4 = new Program("{+ {* 1 7} 4}")
-    val program5 = new Program("{fun {x} {+ 3 x}}")
-    val program6 = new Program("{if0 {+ 3 4} {fun {x} {* x 2}} 8}")
-    val program7 = new Program("{double 3}")
-    val program8 = new Program("{double {if0 {0} 1 {2}}}")
-    val program9 = new Program("x")
-    val program10 = new Program("{rec {x 3} {+ 3 4}}")
+    val program = new Program("")
     
-    before {
-        
+    test("Interprets numeric expressions properly.") {
+        assert("ValueAndStore(NumericValue(3),EmptyStore())" === program.interpretScript("3").toString())
+        assert("ValueAndStore(NumericValue(1729),EmptyStore())" === program.interpretScript("1729").toString())
+        assert("ValueAndStore(NumericValue(1000000),EmptyStore())" === program.interpretScript("{1000000}").toString())
     }
     
-//    test("this") {
-//        
-//    }
+    test("Interprets conditional expressions properly.") {
+        assert("ValueAndStore(NumericValue(1),EmptyStore())" === program.interpretScript("{if0 0 1 2}").toString())
+        assert("ValueAndStore(NumericValue(5),EmptyStore())" === program.interpretScript("{if0 {+ 1 0} {+ 5 5} {- 10 5}}").toString())
+    }
     
-    test("interpet() properly reduces expressions into value stores") {
-//        assert("ValueAndStore(NumericValue(3),EmptyStore())" === interpretScript(NumericValue(3)).toString)
-//        assert("ValueAndStore(NumericValue(78),EmptyStore())" === program2.interpretScript.toString)
-//        assert("ValueAndStore(NumericValue(5),EmptyStore())" === program3.interpretScript.toString)
-//        assert("ValueAndStore(NumericValue(11),EmptyStore())" === program4.interpretScript.toString)
-//        assert("ValueAndStore(NumericValue(ClosuerValue(x,AdditionExpression(IdExpression(x),NumericExpression(3)),EmptyEnvironment()),EmptyStore())" === program5.interpretScript.toString)
-//        assert("ValueAndStore(ClosureValue(x,MultiplicationExpression(IdExpression(x),NumericExpression(2)),EmptyEnvironment()),EmptyStore())" === program6.interpretScript.toString)
-//        assert("ValueAndStore(ClosureValue(),EmptyStore())" === program7.interpretScript.toString) // Won't work.
-//        assert("ValueAndStore(NumericValue(11),EmptyStore())" === program8.interpretScript.toString) // Won't work.
-//        assert("ValueAndStore(NumericValue(11),EmptyStore())" === program9.interpretScript.toString) // Won't work.
-//        assert("ValueAndStore(NumericValue(11),EmptyStore())" === program10.interpretScript.toString) // Doesn't work yet.
+    test("Interprets function expressions properly.") {
+        assert("ValueAndStore(ClosureValue(x,AdditionExpression(IdExpression(x),NumericExpression(1)),EmptyEnvironment()),EmptyStore())" === program.interpretScript("{fun {x} {+ x 1}}").toString())
+        assert("ValueAndStore(ClosureValue(x,ConditionalExpression(IdExpression(x),NumericExpression(1),NumericExpression(2)),EmptyEnvironment()),EmptyStore())" === program.interpretScript("{fun {x} {if0 x 1 2}}").toString())
+        assert("ValueAndStore(ClosureValue(x,NumericExpression(3),EmptyEnvironment()),EmptyStore())" === program.interpretScript("{fun {x} 3}").toString())
+    }
+    
+    test("Interprets recursive function applications properly.") {
+        assert("ValueAndStore(NumericValue(0),SimpleStore(6,NumericValue(0),SimpleStore(5,NumericValue(1),SimpleStore(4,NumericValue(2),SimpleStore(3,NumericValue(3),SimpleStore(2,NumericValue(4),SimpleStore(1,NumericValue(5),SimpleStore(0,ClosureValue(x,ConditionalExpression(SubtractionExpression(IdExpression(x),NumericExpression(0)),NumericExpression(0),ApplicationExpression(IdExpression(reduceToZero),SubtractionExpression(IdExpression(x),NumericExpression(1)))),SimpleEnvironment(reduceToZero,0,EmptyEnvironment())),EmptyStore()))))))))"
+                === program.interpretScript("{rec {reduceToZero} {fun {x} {if0 {- x 0} 0 {reduceToZero {- x 1}}}} {reduceToZero 5}}").toString())
+        assert("ValueAndStore(NumericValue(6),SimpleStore(4,NumericValue(0),SimpleStore(3,NumericValue(1),SimpleStore(2,NumericValue(2),SimpleStore(1,NumericValue(3),SimpleStore(0,ClosureValue(n,ConditionalExpression(SubtractionExpression(IdExpression(n),NumericExpression(0)),NumericExpression(1),MultiplicationExpression(IdExpression(n),ApplicationExpression(IdExpression(fact),SubtractionExpression(IdExpression(n),NumericExpression(1))))),SimpleEnvironment(fact,0,EmptyEnvironment())),EmptyStore()))))))" 
+                === program.interpretScript("{rec {fact} {fun {n} {if0 {- n 0} 1 {* n {fact {- n 1}}}} {fact 3}}").toString())
+        assert("ValueAndStore(NumericValue(720),SimpleStore(7,NumericValue(0),SimpleStore(6,NumericValue(1),SimpleStore(5,NumericValue(2),SimpleStore(4,NumericValue(3),SimpleStore(3,NumericValue(4),SimpleStore(2,NumericValue(5),SimpleStore(1,NumericValue(6),SimpleStore(0,ClosureValue(n,ConditionalExpression(SubtractionExpression(IdExpression(n),NumericExpression(0)),NumericExpression(1),MultiplicationExpression(IdExpression(n),ApplicationExpression(IdExpression(fact),SubtractionExpression(IdExpression(n),NumericExpression(1))))),SimpleEnvironment(fact,0,EmptyEnvironment())),EmptyStore())))))))))" 
+                === program.interpretScript("{rec {fact} {fun {n} {if0 {- n 0} 1 {* n {fact {- n 1}}}} {fact 6}}").toString())
+    }
+    
+    test("Interprets symbols and applications properly.") {
+        assert("ValueAndStore(NumericValue(6),SimpleStore(0,NumericValue(3),EmptyStore()))" 
+                === program.interpretScript("{{fun {x} {+ x x}} 3}").toString())
+        assert("ValueAndStore(NumericValue(20),SimpleStore(1,NumericValue(10),SimpleStore(0,ClosureValue(x,AdditionExpression(IdExpression(x),IdExpression(x)),EmptyEnvironment()),EmptyStore())))" 
+                === program.interpretScript("{{fun {func} {func 10}} {fun {x} {+ x x}}}").toString())
+    }
+    
+    test("Interprets binary arithmetic expressions properly.") {
+        assert("ValueAndStore(NumericValue(3),EmptyStore())" === program.interpretScript("{+ 1 2}").toString())
+        assert("ValueAndStore(NumericValue(10),EmptyStore())" === program.interpretScript("{+ {+ 1 2} {+ 3 4}}").toString())
+        
+        assert("ValueAndStore(NumericValue(5),EmptyStore())" === program.interpretScript("{- 10 5}").toString())
+        assert("ValueAndStore(NumericValue(0),EmptyStore())" === program.interpretScript("{- {- 4 3} {- 2 1}}").toString())
+        
+        assert("ValueAndStore(NumericValue(50),EmptyStore())" === program.interpretScript("{* 5 10}").toString())
+        assert("ValueAndStore(NumericValue(120),EmptyStore())" === program.interpretScript("{* {* 2 3} {* 4 5}}").toString())
+        
+        assert("ValueAndStore(NumericValue(2),EmptyStore())" === program.interpretScript("{/ 20 10}").toString())
+        assert("ValueAndStore(NumericValue(1),EmptyStore())" === program.interpretScript("{/ {/ 20 10} {/ 100 50}}").toString())
+        
+        assert("ValueAndStore(NumericValue(1),EmptyStore())" === program.interpretScript("{% 5 4}").toString())
+        assert("ValueAndStore(NumericValue(1),EmptyStore())" === program.interpretScript("{% {% 9 5} {% 13 10}}").toString())
     }
 }
